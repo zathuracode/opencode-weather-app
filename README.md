@@ -29,6 +29,24 @@ https://api.open-meteo.com/v1/forecast?latitude=45.41117&longitude=-75.69812&cur
 bun init
 ```
 
+## Uso
+
+Ejecuta la aplicación en modo desarrollo:
+
+```bash
+bun index.ts
+```
+
+La aplicación conserva las ciudades guardadas, la ciudad predeterminada y la unidad
+de temperatura en el directorio de configuración del usuario (`~/.config/weather-cli/`;
+o el directorio definido por `XDG_CONFIG_HOME`).
+
+Para generar un binario ejecutable para tu plataforma:
+
+```bash
+bun build --compile index.ts --outfile out/weather
+```
+
 ### Ejemplo del menú
 Esta es la apariencia que deseamos crear
 
