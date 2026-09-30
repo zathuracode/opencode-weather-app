@@ -1,5 +1,6 @@
 import { createInterface } from "node:readline/promises";
 import { stdin, stdout } from "node:process";
+import { cyan, green, red, yellow } from "./colors.ts";
 import { loadState, saveState } from "./storage.ts";
 import type { City, TemperatureUnit, WeatherState } from "./types.ts";
 import { findCity, getCurrentWeather, WeatherApiError } from "./weather-api.ts";
@@ -29,7 +30,7 @@ export class WeatherCli {
 
   async run(): Promise<void> {
     this.state = await loadState();
-    this.print("\nBienvenido a WEATHER CLI.");
+    this.print(`\n${green("Bienvenido a WEATHER CLI.")}`);
 
     try {
       let running = true;
@@ -58,10 +59,10 @@ export class WeatherCli {
             break;
           case "9":
             running = false;
-            this.print("\n¡Hasta pronto!");
+            this.print(`\n${green("¡Hasta pronto!")}`);
             break;
           default:
-            this.print("\nOpción inválida. Intenta nuevamente.");
+            this.print(`\n${red("Opción inválida. Intenta nuevamente.")}`);
         }
       }
     } finally {
@@ -74,25 +75,25 @@ export class WeatherCli {
   }
 
   private ask(message: string): Promise<string> {
-    return this.reader.question(`  ${message}`);
+    return this.reader.question(cyan(`  ${message}`));
   }
 
   private printMenu(): void {
-    this.print(`\n${BORDER}\n         WEATHER CLI\n${BORDER}`);
-    this.print("  1. Clima de ciudad default");
-    this.print(`  2. Clima de todas las ciudades (${this.state.cities.length})`);
-    this.print("  3. Buscar y agregar ciudad");
-    this.print("  4. Eliminar ciudad");
-    this.print("  5. Establecer ciudad default");
-    this.print(`  8. Ajustes (${unitLabel(this.state.temperatureUnit)})`);
-    this.print("  9. Salir");
-    this.print(BORDER);
+    this.print(cyan(`\n${BORDER}\n         WEATHER CLI\n${BORDER}`));
+    this.print(cyan("  1. Clima de ciudad default"));
+    this.print(cyan(`  2. Clima de todas las ciudades (${this.state.cities.length})`));
+    this.print(cyan("  3. Buscar y agregar ciudad"));
+    this.print(cyan("  4. Eliminar ciudad"));
+    this.print(cyan("  5. Establecer ciudad default"));
+    this.print(cyan(`  8. Ajustes (${unitLabel(this.state.temperatureUnit)})`));
+    this.print(cyan("  9. Salir"));
+    this.print(cyan(BORDER));
   }
 
   private async showDefaultWeather(): Promise<void> {
     const city = findDefaultCity(this.state);
     if (!city) {
-      this.print("\nNo hay una ciudad predeterminada. Agrega una ciudad y establécela como default.");
+      this.print(`\n${red("No hay una ciudad predeterminada. Agrega una ciudad y establécela como default.")}`);
       return;
     }
     await this.printWeather(city);
@@ -100,7 +101,7 @@ export class WeatherCli {
 
   private async showAllWeather(): Promise<void> {
     if (this.state.cities.length === 0) {
-      this.print("\nNo hay ciudades guardadas.");
+      this.print(`\n${red("No hay ciudades guardadas.")}`);
       return;
     }
 
@@ -113,38 +114,40 @@ export class WeatherCli {
   private async printWeather(city: City): Promise<void> {
     try {
       const weather = await getCurrentWeather(city, this.state.temperatureUnit);
-      this.print(`  ${cityLabel(city)}: ${weather.temperature}${weather.unit} (actualizado: ${weather.observedAt})`);
+      this.print(
+        `${green(`  ${cityLabel(city)}: `)}${yellow(`${weather.temperature}${weather.unit}`)}${green(` (actualizado: ${weather.observedAt})`)}`,
+      );
     } catch (error) {
-      this.print(`  ${cityLabel(city)}: ${this.errorMessage(error)}`);
+      this.print(red(`  ${cityLabel(city)}: ${this.errorMessage(error)}`));
     }
   }
 
   private async addCity(): Promise<void> {
     const cityName = (await this.ask("Nombre de la ciudad: ")).trim();
     if (!cityName) {
-      this.print("\nDebes ingresar un nombre de ciudad.");
+      this.print(`\n${red("Debes ingresar un nombre de ciudad.")}`);
       return;
     }
 
     try {
       const city = await findCity(cityName);
       if (!city) {
-        this.print("\nNo se encontró esa ciudad.");
+        this.print(`\n${red("No se encontró esa ciudad.")}`);
         return;
       }
 
       if (this.state.cities.some((savedCity) => savedCity.key === city.key)) {
-        this.print(`\n${cityLabel(city)} ya está guardada.`);
+        this.print(`\n${red(`${cityLabel(city)} ya está guardada.`)}`);
         return;
       }
 
       this.state.cities.push(city);
       if (!this.state.defaultCityKey) this.state.defaultCityKey = city.key;
       await saveState(this.state);
-      this.print(`\nCiudad agregada: ${cityLabel(city)}.`);
-      if (this.state.defaultCityKey === city.key) this.print("Se estableció como ciudad default.");
+      this.print(`\n${green(`Ciudad agregada: ${cityLabel(city)}.`)}`);
+      if (this.state.defaultCityKey === city.key) this.print(green("Se estableció como ciudad default."));
     } catch (error) {
-      this.print(`\n${this.errorMessage(error)}`);
+      this.print(`\n${red(this.errorMessage(error))}`);
     }
   }
 
@@ -155,7 +158,7 @@ export class WeatherCli {
     this.state.cities = this.state.cities.filter((savedCity) => savedCity.key !== city.key);
     if (this.state.defaultCityKey === city.key) this.state.defaultCityKey = null;
     await saveState(this.state);
-    this.print(`\nCiudad eliminada: ${cityLabel(city)}.`);
+    this.print(`\n${green(`Ciudad eliminada: ${cityLabel(city)}.`)}`);
   }
 
   private async setDefaultCity(): Promise<void> {
@@ -164,18 +167,18 @@ export class WeatherCli {
 
     this.state.defaultCityKey = city.key;
     await saveState(this.state);
-    this.print(`\nCiudad default establecida: ${cityLabel(city)}.`);
+    this.print(`\n${green(`Ciudad default establecida: ${cityLabel(city)}.`)}`);
   }
 
   private async toggleUnit(): Promise<void> {
     this.state.temperatureUnit = this.state.temperatureUnit === "celsius" ? "fahrenheit" : "celsius";
     await saveState(this.state);
-    this.print(`\nUnidad de temperatura actual: ${unitLabel(this.state.temperatureUnit)}.`);
+    this.print(`\n${green(`Unidad de temperatura actual: ${unitLabel(this.state.temperatureUnit)}.`)}`);
   }
 
   private async selectCity(prompt: string): Promise<City | null> {
     if (this.state.cities.length === 0) {
-      this.print("\nNo hay ciudades guardadas.");
+      this.print(`\n${red("No hay ciudades guardadas.")}`);
       return null;
     }
 
@@ -184,7 +187,7 @@ export class WeatherCli {
     const selected = Number((await this.ask(prompt)).trim());
     if (selected === 0) return null;
     if (!Number.isInteger(selected) || selected < 1 || selected > this.state.cities.length) {
-      this.print("\nSelección inválida.");
+      this.print(`\n${red("Selección inválida.")}`);
       return null;
     }
     return this.state.cities[selected - 1] ?? null;
