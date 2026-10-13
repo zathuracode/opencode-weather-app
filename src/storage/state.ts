@@ -1,16 +1,14 @@
 import { mkdir } from "node:fs/promises";
 import { dirname, join } from "node:path";
-import type { City, TemperatureUnit, WeatherState } from "./types.ts";
+import type { City } from "../types/City.ts";
+import type { WeatherState } from "../types/Settings.ts";
+import type { TemperatureUnit } from "../types/Weather.ts";
+import { DEFAULT_TEMPERATURE_UNIT } from "../utils/constants.ts";
 
 const FILE_NAME = "weather-cli.json";
 
 export function createEmptyState(): WeatherState {
-  return {
-    version: 1,
-    cities: [],
-    defaultCityKey: null,
-    temperatureUnit: "celsius",
-  };
+  return { version: 1, cities: [], defaultCityKey: null, temperatureUnit: DEFAULT_TEMPERATURE_UNIT };
 }
 
 export function getStateFilePath(): string {
@@ -36,13 +34,13 @@ function isCity(value: unknown): value is City {
 function isState(value: unknown): value is WeatherState {
   if (typeof value !== "object" || value === null) return false;
   const state = value as Partial<WeatherState>;
-  const validUnit: TemperatureUnit[] = ["celsius", "fahrenheit"];
+  const validUnits: TemperatureUnit[] = ["celsius", "fahrenheit"];
   return (
     state.version === 1 &&
     Array.isArray(state.cities) &&
     state.cities.every(isCity) &&
     (typeof state.defaultCityKey === "string" || state.defaultCityKey === null) &&
-    validUnit.includes(state.temperatureUnit as TemperatureUnit)
+    validUnits.includes(state.temperatureUnit as TemperatureUnit)
   );
 }
 
@@ -56,7 +54,6 @@ export async function loadState(filePath = getStateFilePath()): Promise<WeatherS
   } catch {
     // A corrupt state file must not prevent the CLI from starting.
   }
-
   return createEmptyState();
 }
 

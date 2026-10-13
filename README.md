@@ -34,7 +34,7 @@ bun init
 Ejecuta la aplicación en modo desarrollo:
 
 ```bash
-bun index.ts
+bun src/index.ts
 ```
 
 La aplicación conserva las ciudades guardadas, la ciudad predeterminada y la unidad
@@ -47,7 +47,7 @@ ambiguo, muestra el nombre, la región y el país para que puedas elegir la ubic
 Para generar un binario ejecutable para tu plataforma:
 
 ```bash
-bun build --compile index.ts --outfile out/weather
+bun build --compile src/index.ts --outfile out/weather
 ```
 
 ### Ejemplo del menú
