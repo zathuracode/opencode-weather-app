@@ -89,3 +89,20 @@ test("devuelve una lista vacía cuando Open-Meteo no encuentra coincidencias", a
 
   await expect(findCities("Sin resultados", fetcher)).resolves.toEqual([]);
 });
+
+test("rechaza pronósticos incompletos y conserva la unidad Fahrenheit", async () => {
+  const invalidFetcher: Fetcher = async () => new Response(JSON.stringify({ current: {} }), { status: 200 });
+  const fahrenheitFetcher: Fetcher = async () => new Response(JSON.stringify({
+    current: { temperature_2m: 70, time: "2026-09-28T12:00" },
+    current_units: { temperature_2m: "°F" },
+  }));
+
+  await expect(getCurrentWeather(ottawa, "celsius", invalidFetcher)).rejects.toThrow(
+    "La respuesta del pronóstico no contiene la temperatura actual.",
+  );
+  await expect(getCurrentWeather(ottawa, "fahrenheit", fahrenheitFetcher)).resolves.toEqual({
+    temperature: 70,
+    observedAt: "2026-09-28T12:00",
+    unit: "°F",
+  });
+});

@@ -47,8 +47,11 @@ ambiguo, muestra el nombre, la región y el país para que puedas elegir la ubic
 Para generar un binario ejecutable para tu plataforma:
 
 ```bash
-bun build --compile src/index.ts --outfile out/weather
+bun run build
 ```
+
+El comando ejecuta las pruebas con cobertura mínima del 90% y la comprobación de
+tipos antes de compilar. Si alguna validación falla, no se genera el binario.
 
 ### Ejemplo del menú
 Esta es la apariencia que deseamos crear

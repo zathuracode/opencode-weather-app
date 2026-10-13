@@ -11,42 +11,66 @@ import { loadCities } from "./storage/citiesStorage.ts";
 import { loadSettings } from "./storage/settingsStorage.ts";
 import { green, red } from "./utils/colors.ts";
 
-export async function runWeatherCli(): Promise<void> {
-  const input = new ConsoleInput();
-  consoleOutput.print(`\n${green("Bienvenido a WEATHER CLI.")}`);
+export interface WeatherCliDependencies {
+  input?: ConsoleInput;
+  output?: typeof consoleOutput;
+  loadCities?: typeof loadCities;
+  loadSettings?: typeof loadSettings;
+  renderMenu?: typeof renderMenu;
+  getDefaultWeather?: typeof getDefaultWeather;
+  listCities?: typeof listCities;
+  addCity?: typeof addCity;
+  removeCity?: typeof removeCity;
+  setDefaultCity?: typeof setDefaultCity;
+  toggleTemperatureUnit?: typeof toggleTemperatureUnit;
+}
+
+export async function runWeatherCli(dependencies: WeatherCliDependencies = {}): Promise<void> {
+  const input = dependencies.input ?? new ConsoleInput();
+  const output = dependencies.output ?? consoleOutput;
+  const loadCitiesAction = dependencies.loadCities ?? loadCities;
+  const loadSettingsAction = dependencies.loadSettings ?? loadSettings;
+  const renderMenuAction = dependencies.renderMenu ?? renderMenu;
+  const getDefaultWeatherAction = dependencies.getDefaultWeather ?? getDefaultWeather;
+  const listCitiesAction = dependencies.listCities ?? listCities;
+  const addCityAction = dependencies.addCity ?? addCity;
+  const removeCityAction = dependencies.removeCity ?? removeCity;
+  const setDefaultCityAction = dependencies.setDefaultCity ?? setDefaultCity;
+  const toggleTemperatureUnitAction = dependencies.toggleTemperatureUnit ?? toggleTemperatureUnit;
+  output.print(`\n${green("Bienvenido a WEATHER CLI.")}`);
 
   try {
     let running = true;
     while (running) {
-      const [cities, settings] = await Promise.all([loadCities(), loadSettings()]);
-      renderMenu(consoleOutput, cities.length, settings);
+      const [cities, settings] = await Promise.all([loadCitiesAction(), loadSettingsAction()]);
+      renderMenuAction(output, cities.length, settings);
       const option = (await input.ask("Selecciona una opción: ")).trim();
 
       switch (option) {
         case "1":
-          await getDefaultWeather(consoleOutput, cities, settings);
+          await getDefaultWeatherAction(output, cities, settings);
           break;
         case "2":
-          await listCities(consoleOutput, cities, settings);
+          await listCitiesAction(output, cities, settings);
           break;
         case "3":
-          await addCity(input, consoleOutput, cities, settings);
+          await addCityAction(input, output, cities, settings);
           break;
         case "4":
-          await removeCity(input, consoleOutput, cities, settings);
+          await removeCityAction(input, output, cities, settings);
           break;
         case "5":
-          await setDefaultCity(input, consoleOutput, cities, settings);
+          await setDefaultCityAction(input, output, cities, settings);
           break;
         case "8":
-          await toggleTemperatureUnit(consoleOutput, settings);
+          await toggleTemperatureUnitAction(output, settings);
           break;
         case "9":
           running = false;
-          consoleOutput.print(`\n${green("¡Hasta pronto!")}`);
+          output.print(`\n${green("¡Hasta pronto!")}`);
           break;
         default:
-          consoleOutput.print(`\n${red("Opción inválida. Intenta nuevamente.")}`);
+          output.print(`\n${red("Opción inválida. Intenta nuevamente.")}`);
       }
     }
   } finally {
