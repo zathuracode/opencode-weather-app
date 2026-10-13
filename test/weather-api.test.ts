@@ -3,7 +3,7 @@ import type { City } from "../src/types.ts";
 import {
   buildForecastUrl,
   buildGeocodingUrl,
-  findCity,
+  findCities,
   getCurrentWeather,
   type Fetcher,
 } from "../src/weather-api.ts";
@@ -21,7 +21,7 @@ test("construye la URL de geocodificación en español", () => {
   const url = buildGeocodingUrl("Ciudad de México");
 
   expect(url.searchParams.get("name")).toBe("Ciudad de México");
-  expect(url.searchParams.get("count")).toBe("1");
+  expect(url.searchParams.get("count")).toBe("5");
   expect(url.searchParams.get("language")).toBe("es");
   expect(url.searchParams.get("format")).toBe("json");
 });
@@ -35,11 +35,14 @@ test("solicita el pronóstico con coordenadas y unidad", () => {
   expect(url.searchParams.get("temperature_unit")).toBe("fahrenheit");
 });
 
-test("convierte las respuestas de Open-Meteo al modelo de la aplicación", async () => {
+test("convierte varias coincidencias de Open-Meteo al modelo de la aplicación", async () => {
   const geocodingFetcher: Fetcher = async () =>
     new Response(
       JSON.stringify({
-        results: [{ name: "Ottawa", country: "Canadá", admin1: "Ontario", latitude: 45.41117, longitude: -75.69812 }],
+        results: [
+          { name: "Ottawa", country: "Canadá", admin1: "Ontario", latitude: 45.41117, longitude: -75.69812 },
+          { name: "Ottawa", country: "Estados Unidos", admin1: "Illinois", latitude: 41.3456, longitude: -88.8426 },
+        ],
       }),
       { status: 200 },
     );
@@ -52,10 +55,38 @@ test("convierte las respuestas de Open-Meteo al modelo de la aplicación", async
       { status: 200 },
     );
 
-  await expect(findCity("Ottawa", geocodingFetcher)).resolves.toMatchObject(ottawa);
+  await expect(findCities("Ottawa", geocodingFetcher)).resolves.toEqual([
+    ottawa,
+    {
+      key: "ottawa:41.3456:-88.8426",
+      name: "Ottawa",
+      country: "Estados Unidos",
+      region: "Illinois",
+      latitude: 41.3456,
+      longitude: -88.8426,
+    },
+  ]);
   await expect(getCurrentWeather(ottawa, "celsius", forecastFetcher)).resolves.toEqual({
     temperature: 21.5,
     observedAt: "2026-09-28T12:00",
     unit: "°C",
   });
+});
+
+test("descarta coincidencias malformadas y devuelve una lista vacía si no hay ciudades válidas", async () => {
+  const fetcher: Fetcher = async () =>
+    new Response(
+      JSON.stringify({
+        results: [{ name: "Inválida", latitude: "45", longitude: -75 }, { country: "Canadá" }],
+      }),
+      { status: 200 },
+    );
+
+  await expect(findCities("Inválida", fetcher)).resolves.toEqual([]);
+});
+
+test("devuelve una lista vacía cuando Open-Meteo no encuentra coincidencias", async () => {
+  const fetcher: Fetcher = async () => new Response(JSON.stringify({}), { status: 200 });
+
+  await expect(findCities("Sin resultados", fetcher)).resolves.toEqual([]);
 });

@@ -32,7 +32,7 @@ export class WeatherApiError extends Error {
 export function buildGeocodingUrl(cityName: string): URL {
   const url = new URL(GEOCODING_URL);
   url.searchParams.set("name", cityName);
-  url.searchParams.set("count", "1");
+  url.searchParams.set("count", "5");
   url.searchParams.set("language", "es");
   url.searchParams.set("format", "json");
   return url;
@@ -83,31 +83,33 @@ async function getJson(url: URL, fetcher: Fetcher): Promise<unknown> {
   }
 }
 
-export async function findCity(cityName: string, fetcher: Fetcher = fetch): Promise<City | null> {
-  const payload = await getJson(buildGeocodingUrl(cityName), fetcher);
-  const results = isRecord(payload) ? (payload as GeocodingResponse).results : undefined;
+function toCity(result: unknown): City | null {
+  if (!isRecord(result)) return null;
 
-  if (!Array.isArray(results) || results.length === 0 || !isRecord(results[0])) {
-    return null;
-  }
+  const geocodingResult = result as GeocodingResult;
+  const name = asNonEmptyString(geocodingResult.name);
+  const latitude = asFiniteNumber(geocodingResult.latitude);
+  const longitude = asFiniteNumber(geocodingResult.longitude);
 
-  const result = results[0] as GeocodingResult;
-  const name = asNonEmptyString(result.name);
-  const latitude = asFiniteNumber(result.latitude);
-  const longitude = asFiniteNumber(result.longitude);
-
-  if (name === null || latitude === null || longitude === null) {
-    throw new WeatherApiError("La respuesta de geocodificación no contiene una ciudad válida.");
-  }
+  if (name === null || latitude === null || longitude === null) return null;
 
   return {
     key: cityKey(name, latitude, longitude),
     name,
-    country: asNonEmptyString(result.country),
-    region: asNonEmptyString(result.admin1),
+    country: asNonEmptyString(geocodingResult.country),
+    region: asNonEmptyString(geocodingResult.admin1),
     latitude,
     longitude,
   };
+}
+
+export async function findCities(cityName: string, fetcher: Fetcher = fetch): Promise<City[]> {
+  const payload = await getJson(buildGeocodingUrl(cityName), fetcher);
+  const results = isRecord(payload) ? (payload as GeocodingResponse).results : undefined;
+
+  if (!Array.isArray(results)) return [];
+
+  return results.map(toCity).filter((city): city is City => city !== null);
 }
 
 export async function getCurrentWeather(

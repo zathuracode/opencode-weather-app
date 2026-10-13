@@ -19,7 +19,7 @@ El objetivo de esta aplicación es que creemos una aplicación de consola que pi
 2. Paso 2: OpenMeteo API.
 
 ```
-https://geocoding-api.open-meteo.com/v1/search?name=Ottawa&count=1&language=es&format=json
+https://geocoding-api.open-meteo.com/v1/search?name=Ottawa&count=5&language=es&format=json
 https://api.open-meteo.com/v1/forecast?latitude=45.41117&longitude=-75.69812&current=temperature_2m
 ```
 
@@ -40,6 +40,9 @@ bun index.ts
 La aplicación conserva las ciudades guardadas, la ciudad predeterminada y la unidad
 de temperatura en el directorio de configuración del usuario (`~/.config/weather-cli/`;
 o el directorio definido por `XDG_CONFIG_HOME`).
+
+Al buscar una ciudad, la aplicación obtiene hasta cinco coincidencias. Si el nombre es
+ambiguo, muestra el nombre, la región y el país para que puedas elegir la ubicación correcta.
 
 Para generar un binario ejecutable para tu plataforma:
 

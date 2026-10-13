@@ -3,7 +3,7 @@ import { stdin, stdout } from "node:process";
 import { cyan, green, red, yellow } from "./colors.ts";
 import { loadState, saveState } from "./storage.ts";
 import type { City, TemperatureUnit, WeatherState } from "./types.ts";
-import { findCity, getCurrentWeather, WeatherApiError } from "./weather-api.ts";
+import { findCities, getCurrentWeather, WeatherApiError } from "./weather-api.ts";
 
 const BORDER = "════════════════════════════════════════";
 
@@ -130,11 +130,14 @@ export class WeatherCli {
     }
 
     try {
-      const city = await findCity(cityName);
-      if (!city) {
+      const cities = await findCities(cityName);
+      if (cities.length === 0) {
         this.print(`\n${red("No se encontró esa ciudad.")}`);
         return;
       }
+
+      const city = await this.selectSearchResult(cities);
+      if (!city) return;
 
       if (this.state.cities.some((savedCity) => savedCity.key === city.key)) {
         this.print(`\n${red(`${cityLabel(city)} ya está guardada.`)}`);
@@ -182,15 +185,26 @@ export class WeatherCli {
       return null;
     }
 
+    return this.selectFromCities(this.state.cities, prompt);
+  }
+
+  private async selectSearchResult(cities: City[]): Promise<City | null> {
+    if (cities.length === 1) return cities[0] ?? null;
+
+    this.print("\nSe encontraron varias ciudades:");
+    return this.selectFromCities(cities, "Elige la ciudad que deseas agregar (0 para cancelar): ");
+  }
+
+  private async selectFromCities(cities: City[], prompt: string): Promise<City | null> {
     this.print("");
-    this.state.cities.forEach((city, index) => this.print(`  ${index + 1}. ${cityLabel(city)}`));
+    cities.forEach((city, index) => this.print(`  ${index + 1}. ${cityLabel(city)}`));
     const selected = Number((await this.ask(prompt)).trim());
     if (selected === 0) return null;
-    if (!Number.isInteger(selected) || selected < 1 || selected > this.state.cities.length) {
+    if (!Number.isInteger(selected) || selected < 1 || selected > cities.length) {
       this.print(`\n${red("Selección inválida.")}`);
       return null;
     }
-    return this.state.cities[selected - 1] ?? null;
+    return cities[selected - 1] ?? null;
   }
 
   private errorMessage(error: unknown): string {
