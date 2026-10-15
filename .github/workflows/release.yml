@@ -1,0 +1,68 @@
+name: Publicar release
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Obtener código
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Configurar Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Instalar dependencias
+        run: bun install --frozen-lockfile
+
+      - name: Obtener versión
+        id: version
+        run: echo "tag=v$(bun -e 'console.log(require("./package.json").version)')" >> "$GITHUB_OUTPUT"
+
+      - name: Comprobar si el release ya existe
+        id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "${{ steps.version.outputs.tag }}" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Construir binario
+        run: bun run build
+
+      - name: Preparar binario para el release
+        run: |
+          mkdir release-assets
+          cp out/weather release-assets/weather-linux-x64
+          bun build --compile --target=bun-darwin-x64 src/index.ts --outfile release-assets/weather-macos-x64
+          bun build --compile --target=bun-darwin-arm64 src/index.ts --outfile release-assets/weather-macos-arm64
+          bun build --compile --target=bun-windows-x64 src/index.ts --outfile release-assets/weather-windows-x64.exe
+
+      - name: Crear release y adjuntar binario
+        if: steps.release.outputs.exists == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ steps.version.outputs.tag }}" release-assets/* \
+            --title "${{ steps.version.outputs.tag }}" \
+            --target "${{ github.sha }}" \
+            --generate-notes
+
+      - name: Actualizar binario de un release existente
+        if: steps.release.outputs.exists == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${{ steps.version.outputs.tag }}" release-assets/* --clobber
