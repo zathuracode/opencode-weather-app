@@ -1,10 +1,10 @@
 import { expect, spyOn, test } from "bun:test";
 import { stdout } from "node:process";
-import { ConsoleInput, selectCity } from "../src/presentation/input.ts";
-import { buildMenuOptions, renderMenu } from "../src/presentation/menu.ts";
-import { consoleOutput, type Output } from "../src/presentation/output.ts";
-import type { City } from "../src/types/City.ts";
-import { formatCity, formatTemperatureUnit } from "../src/utils/format.ts";
+import { ConsoleInput, selectCity } from "../../src/presentation/input.ts";
+import { buildMenuOptions, renderMenu } from "../../src/presentation/menu.ts";
+import { consoleOutput, type Output } from "../../src/presentation/output.ts";
+import type { City } from "../../src/types/City.ts";
+import { formatCity, formatTemperatureUnit } from "../../src/utils/format.ts";
 
 const city: City = { key: "madrid", name: "Madrid", region: null, country: "España", latitude: 1, longitude: 2 };
 const settings = { defaultCityKey: null, temperatureUnit: "celsius" as const };

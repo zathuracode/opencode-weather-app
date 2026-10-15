@@ -1,9 +1,9 @@
 import { expect, test } from "bun:test";
 import { join } from "node:path";
 import { mkdir, rm, writeFile } from "node:fs/promises";
-import { createEmptyState, getStateFilePath, loadState, saveState } from "../src/storage/state.ts";
-import { loadCities, saveCities } from "../src/storage/citiesStorage.ts";
-import { loadSettings, saveSettings } from "../src/storage/settingsStorage.ts";
+import { createEmptyState, getStateFilePath, loadState, saveState } from "../../src/storage/state.ts";
+import { loadCities, saveCities } from "../../src/storage/citiesStorage.ts";
+import { loadSettings, saveSettings } from "../../src/storage/settingsStorage.ts";
 
 test("persiste y recupera las preferencias", async () => {
   const directory = join(import.meta.dir, ".tmp-storage-test");

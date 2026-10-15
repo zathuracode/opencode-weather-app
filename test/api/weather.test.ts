@@ -1,11 +1,11 @@
 import { expect, test } from "bun:test";
-import type { City } from "../src/types/City.ts";
+import type { City } from "../../src/types/City.ts";
 import {
   buildGeocodingUrl,
   findCities,
-} from "../src/api/geocoding.ts";
-import { buildForecastUrl, getCurrentWeather } from "../src/api/weather.ts";
-import type { Fetcher } from "../src/api/client.ts";
+} from "../../src/api/geocoding.ts";
+import { buildForecastUrl, getCurrentWeather } from "../../src/api/weather.ts";
+import type { Fetcher } from "../../src/api/client.ts";
 
 const ottawa: City = {
   key: "ottawa:45.41117:-75.69812",

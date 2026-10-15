@@ -4,7 +4,7 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "test": "bun test --coverage",
+    "test": "bun test --coverage --isolate --parallel=1",
     "typecheck": "bunx tsc --noEmit",
     "build": "bun run test && bun run typecheck && bun build --compile src/index.ts --outfile out/weather"
   },

@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { asFiniteNumber, asNonEmptyString, getJson, isRecord, WeatherApiError } from "../src/api/client.ts";
+import { asFiniteNumber, asNonEmptyString, getJson, isRecord, WeatherApiError } from "../../src/api/client.ts";
 
 const url = new URL("https://example.test");
 
